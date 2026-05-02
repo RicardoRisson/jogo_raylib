@@ -1,70 +1,59 @@
-// Inclusão da biblioteca Raylib
 #include "raylib.h"
+#include "personagens.h"
+#include "movimentacao.h" 
+#include "objetos.h"
 
-// Definição das constantes do jogo
-#define ALTURA_JANELA 1000
-#define LARGURA_JANELA 1000
-#define ALTURA_JOGADOR 50
-#define LARGURA_JOGADOR 50
-#define TITULO_DO_JOGO "teste"
+// Definições Estáticas
+#define JANELA_LARGURA  1500
+#define JANELA_ALTURA   1000
+#define JOGADOR_LARGURA 50
+#define JOGADOR_ALTURA  50
+#define JANELA_TITULO   "teste"
+
+// Configurações das Plataformas
+#define P1_X 250.0f
+#define P1_Y 900.0f
+#define P1_W 1000.0f
+#define P1_H 50.0f
+
+#define P2_X 340.0f
+#define P2_Y 600.0f
+#define P2_W 800.0f
+#define P2_H 50.0f
 
 int main(void)
 {
-    int velocidade_jogador = 5; // Velocidade de movimento do jogador (mantida variável para futuras implementações)
+    // Configurações iniciais
+    InitWindow(JANELA_LARGURA, JANELA_ALTURA, JANELA_TITULO);
+    SetTargetFPS(60);
 
-    Rectangle jogador = { // Retângulo que representa o jogador
-        (LARGURA_JANELA - LARGURA_JOGADOR) / 2.0f,
-        ALTURA_JANELA - 100 - ALTURA_JOGADOR,
-        LARGURA_JOGADOR,
-        ALTURA_JOGADOR
-    };
+    float velocidade_jogador = 5.0f;
 
-    Rectangle chao = { // Retângulo que representa o chão
-        (LARGURA_JANELA - (LARGURA_JANELA - 200)) / 2.0f,
-        ALTURA_JANELA - 100,
-        LARGURA_JANELA - 200,
-        100
-    };
+    // Inicialização objetos
+    Rectangle jogador = criar_jogador(JANELA_LARGURA, JANELA_ALTURA, JOGADOR_LARGURA, JOGADOR_ALTURA);
+    Rectangle chao_1_f1 = criar_plataforma(P1_X, P1_Y, P1_W, P1_H);
+    Rectangle chao_2_f1 = criar_plataforma(P2_X, P2_Y, P2_W, P2_H);
 
-    InitWindow(LARGURA_JANELA, ALTURA_JANELA, TITULO_DO_JOGO); // Inicializa a janela
-    SetTargetFPS(60); // Fixa a taxa de quadros em 60 FPS
+    Rectangle plataformas[] = { chao_1_f1, chao_2_f1 };
+    int qtd_plataformas = 2;
 
-    while (!WindowShouldClose()) // Loop principal do jogo
+    while (!WindowShouldClose()) 
     {
-        // Movimento para a esquerda: só permite mover se o jogador continuar sobre o chão
-        if (IsKeyDown(KEY_A))
-        {
-            if (jogador.x - velocidade_jogador >= chao.x)
-            {
-                jogador.x -= velocidade_jogador;
-            }
-        }
+        // Atualiza
+        jogador = atualizar_movimento(jogador, plataformas[0], velocidade_jogador); 
+        jogador = verificar_chao(jogador, plataformas, qtd_plataformas);
 
-        // Movimento para a direita: verifica a borda direita do jogador antes de mover
-        if (IsKeyDown(KEY_D))
-        {
-            if (jogador.x + jogador.width + velocidade_jogador <= chao.x + chao.width)
-            {
-                jogador.x += velocidade_jogador;
-            }
-        }
-
-        jogador.y = chao.y - jogador.height; // Mantém o jogador sempre apoiado sobre o chão
-
+        // Renderiza
         BeginDrawing();
-            ClearBackground(RAYWHITE);         // Limpa a tela com fundo branco
-            DrawRectangleRec(chao, RED);       // Desenha o chão
-            DrawRectangleRec(jogador, GREEN);  // Desenha o jogador
+            ClearBackground(RAYWHITE);
+
+            DrawRectangleRec(chao_1_f1, RED);
+            DrawRectangleRec(chao_2_f1, RED);
+            DrawRectangleRec(jogador, GREEN);
+
         EndDrawing();
     }
 
     CloseWindow();
     return 0;
 }
-
-/*
-   TODO: adicionar mais uma plataforma em cima dele, e criar uma escada que quando pressiona W teleporta ele pra cima
-         a escada deve também permitir descer caso ele aperte A em cima dela, devemos também ainda nessa "sessao"
-         criar alguma lib atraves do include (faze nosso proprio) para poder colocar comandos que ocupam muito espaco
-         nele, como as teclas de movimento bem como TALVEZ alguma forma de gerar plataformas de forma mais facil
- */

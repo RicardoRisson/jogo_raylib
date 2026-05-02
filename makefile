@@ -1,32 +1,32 @@
-# compilador
+# Compilador
 CC = gcc
 
-# opções de flags de compilacao
+# Opções de flags de compilação
 CFLAGS = -Wall -Wextra -std=c11
 
-# bibliotecas necessárias para Raylib
+# Bibliotecas necessárias para Raylib
 LIBS = -lraylib -lm -lpthread -ldl -lrt -lX11
 
-# aome do executável gerado
+# Nome do executável gerado
 TARGET = a.out
 
-# arquivo principal
-SRC = main.c
+# ARRUMADO: Pega todos os arquivos .c da pasta atual
+SRC = $(wildcard *.c)
 
-# compila o programa
+# Compila o programa
 all: $(TARGET)
 
-# cria o executavel
+# Cria o executável
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LIBS)
 
-# compila e executa (se ja estiver compilado só executa)
+# Compila e executa
 run: $(TARGET)
 	./$(TARGET)
 
-# remove o executável gerado
+# Remove o executável gerado
 clean:
 	rm -f $(TARGET)
 
-# indica que estas regras não geram arquivos com esses nomes
+# Indica que estas regras não geram arquivos com esses nomes
 .PHONY: all run clean
