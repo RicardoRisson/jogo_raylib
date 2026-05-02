@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 
-// Protótipo para a criação de plataformas ou obstáculos retangulares
+// Define as dimensões e posição de um obstáculo/chão
 Rectangle criar_plataforma(float x, float y, float largura, float altura);
 
 #endif

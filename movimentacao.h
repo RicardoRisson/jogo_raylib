@@ -3,12 +3,12 @@
 
 #include "raylib.h"
 
-// Protótipo para a função de movimentação horizontal
-// Controla as teclas A/D e limita o jogador a uma plataforma de referência
-Rectangle atualizar_movimento(Rectangle jogador, Rectangle plataforma_referencia, float velocidade);
+// --- Lógica de Teclado e Física ---
+// Processa entradas A/D para X e aplica gravidade/pulo para Y
+Rectangle atualizar_movimento(Rectangle jogador, float velocidade);
 
-// Protótipo para a função de detecção de solo
-// Percorre o array de plataformas para encontrar onde o jogador deve pisar
+// --- Lógica de Colisão ---
+// Ajusta altura do jogador e reseta aceleração ao tocar plataformas
 Rectangle verificar_chao(Rectangle jogador, Rectangle plataformas[], int quantidade_plataformas);
 
 #endif

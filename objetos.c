@@ -1,6 +1,7 @@
 #include "objetos.h"
 
-// Fábrica de plataformas: recebe coordenadas e dimensões e retorna um Rectangle
+// --- Construtores de Cenário ---
+// Inicializa um retângulo com as propriedades da plataforma
 Rectangle criar_plataforma(float x, float y, float largura, float altura) {
     Rectangle plataforma;
 
