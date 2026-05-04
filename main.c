@@ -24,6 +24,7 @@ int main(void)
     InitWindow(JANELA_LARGURA, JANELA_ALTURA, JANELA_TITULO);
     SetTargetFPS(60);
 
+    Texture2D sprite_jogador = LoadTexture("Sprites/Personagem_Parado_Direita.png");
     float velocidade_jogador = 5.0f;
 
     Rectangle jogador = criar_jogador(JANELA_LARGURA / 2, 0, JOGADOR_LARGURA, JOGADOR_ALTURA);
@@ -39,14 +40,14 @@ int main(void)
         jogador.y += 5.0f; // Gravidade
         jogador = atualizar_movimento(jogador, velocidade_jogador); 
         jogador = verificar_chao(jogador, plataformas, qtd_plataformas);
-
+        
         // Renderiza
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
             DrawRectangleRec(chao_1_f1, RED);
             DrawRectangleRec(chao_2_f1, RED);
-            DrawRectangleRec(jogador, GREEN);
+            DrawRectangleRec(jogador,GREEN);
         EndDrawing();
     }
 
