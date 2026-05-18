@@ -1,32 +1,38 @@
 # Compilador
 CC = gcc
 
-# Opções de flags de compilação
+# Includes da raylib
+INCLUDES = -I/usr/local/include
+
+# Bibliotecas da raylib
+LIBPATH = -L/usr/local/lib
+
+# Flags
 CFLAGS = -Wall -Wextra -std=c11
 
-# Bibliotecas necessárias para Raylib
-LIBS = -lraylib -lm -lpthread -ldl -lrt -lX11
+# Bibliotecas necessárias
+LIBS = $(LIBPATH) -lraylib -lm -lpthread -ldl -lrt -lX11
 
-# Nome do executável gerado
-TARGET = a.out
+# Nome do executável
+TARGET = game
 
-# ARRUMADO: Pega todos os arquivos .c da pasta atual
+# Arquivos fonte
 SRC = $(wildcard *.c)
 
-# Compila o programa
+# Regra principal
 all: $(TARGET)
 
-# Cria o executável
+# Compilação
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
 
-# Compila e executa
-run: $(TARGET)
+# Executar
+run: all
 	./$(TARGET)
 
-# Remove o executável gerado
-clean:
-	rm -f $(TARGET)
 
-# Indica que estas regras não geram arquivos com esses nomes
+# Limpeza
+clean:
+	rm -f $(TARGET) *.o
+
 .PHONY: all run clean
