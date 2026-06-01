@@ -1,7 +1,6 @@
 #include "raylib.h"
 #include "personagens.h"
 #include "movimentacao.h" 
-#include "objetos.h"
 #include "mapa.h" 
 
 #define JANELA_LARGURA  1500
@@ -15,6 +14,7 @@ int main(void)
     InitWindow(JANELA_LARGURA, JANELA_ALTURA, JANELA_TITULO);
     SetTargetFPS(60);
 
+    // Carrega a textura do jogador (pode ser usada futuramente no DrawTexture)
     Texture2D sprite_jogador = LoadTexture("Sprites/Personagem_Parado_Direita.png");
     float velocidade_jogador = 5.0f;
 
@@ -31,15 +31,15 @@ int main(void)
     // 1. Carrega os dados do arquivo para os arrays e descobre onde está o 'P'
     carregar_mapa("mapa.txt", plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador);
 
-    // 2. O jogador agora é criado na posição exata do 'P' lido do mapa
+    // 2. O jogador é criado na posição exata do 'P' lido do mapa
     Rectangle jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
 
     while (!WindowShouldClose()) 
     {
         // --- Atualiza lógica ---
-        jogador.y += 5.0f; // Gravidade temporária do seu main original
-        jogador = atualizar_movimento(jogador, velocidade_jogador); 
-        jogador = verificar_chao(jogador, plataformas, qtd_plataformas);
+        // A função verificar_chao agora gerencia entradas (A/D/Seta), pulo (W/Espaço), 
+        // gravidade interna e resolve colisões nos 4 lados sem teletransporte.
+        jogador = verificar_chao(jogador, plataformas, qtd_plataformas, velocidade_jogador);
 
         // --- Renderiza ---
         BeginDrawing();
@@ -55,11 +55,14 @@ int main(void)
                 DrawRectangleRec(plataformas[i], RED);
             }
 
-            // Desenha o jogador
+            // Desenha o jogador (retângulo verde temporário)
             DrawRectangleRec(jogador, GREEN);
             
         EndDrawing();
     }
+
+    // Descarrega a textura da memória antes de fechar o jogo
+    UnloadTexture(sprite_jogador);
 
     CloseWindow();
     return 0;

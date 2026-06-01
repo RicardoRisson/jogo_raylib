@@ -3,12 +3,10 @@
 
 #include "raylib.h"
 
-// --- Lógica de Teclado e Física ---
-// Processa entradas A/D para X e aplica gravidade/pulo para Y
-Rectangle atualizar_movimento(Rectangle jogador, float velocidade);
+// Garanta que a assinatura receba o float velocidade no final
+Rectangle verificar_chao(Rectangle jogador, Rectangle plataformas[], int quantidade_plataformas, float velocidade);
 
-// --- Lógica de Colisão ---
-// Ajusta altura do jogador e reseta aceleração ao tocar plataformas
-Rectangle verificar_chao(Rectangle jogador, Rectangle plataformas[], int quantidade_plataformas);
-//teste
+// Mantida apenas se você ainda chamar em algum lugar, senão pode apagar
+Rectangle atualizar_movimento(Rectangle jogador, float velocidade); 
+
 #endif
