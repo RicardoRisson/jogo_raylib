@@ -15,6 +15,7 @@ int main(void)
     InitWindow(JANELA_LARGURA, JANELA_ALTURA, JANELA_TITULO);
     SetTargetFPS(60);
 
+    Texture2D sprite_jogador = LoadTexture("Sprites/Personagem_Parado_Direita.png");
     float velocidade_jogador = 5.0f;
 
     // Arrays para guardar o que for lido do TXT
