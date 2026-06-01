@@ -1,32 +1,31 @@
-# Compilador
+# compilador
 CC = gcc
 
-# Opções de flags de compilação
+# flags de compilação
 CFLAGS = -Wall -Wextra -std=c11
 
-# Bibliotecas necessárias para Raylib
+# arquivos-fonte (incluindo o novo arquivo mapa.c)
+SRC = main.c personagens.c movimentacao.c objetos.c mapa.c
+
+# nome do executável
+TARGET = jogo
+
+# bibliotecas para Linux
 LIBS = -lraylib -lm -lpthread -ldl -lrt -lX11
 
-# Nome do executável gerado
-TARGET = a.out
-
-# ARRUMADO: Pega todos os arquivos .c da pasta atual
-SRC = $(wildcard *.c)
-
-# Compila o programa
+# regra padrão (se digitar apenas 'make', ele compila)
 all: $(TARGET)
 
-# Cria o executável
+# compila o jogo
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LIBS)
 
-# Compila e executa
+# compila e executa direto com 'make run'
 run: $(TARGET)
 	./$(TARGET)
 
-# Remove o executável gerado
+# limpa o executável antigo
 clean:
 	rm -f $(TARGET)
 
-# Indica que estas regras não geram arquivos com esses nomes
 .PHONY: all run clean

@@ -1,18 +1,13 @@
 #include "personagens.h"
 
-// --- Constantes de Posicionamento ---
-static const float MARGEM_INFERIOR = 100.0f;
-
-Rectangle criar_jogador(int largura_janela, int altura_janela, int largura_jogador, int altura_jogador) {
+Rectangle criar_jogador(float spawn_x, float spawn_y, int largura_jogador, int altura_jogador) {
     Rectangle jogador;
     
-    // Cálculo de centralização horizontal
-    jogador.x = (largura_janela - largura_jogador) / 2.0f;
+    // Define a posição diretamente com base no que veio do mapa
+    jogador.x = spawn_x;
+    jogador.y = spawn_y;
     
-    // Posicionamento vertical relativo à base da janela
-    jogador.y = (float)altura_janela - MARGEM_INFERIOR - altura_jogador;
-    
-    // Definição das dimensões do container
+    // Definição das dimensões
     jogador.width = (float)largura_jogador;
     jogador.height = (float)altura_jogador;
     

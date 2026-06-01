@@ -2,22 +2,13 @@
 #include "personagens.h"
 #include "movimentacao.h" 
 #include "objetos.h"
+#include "mapa.h" 
 
 #define JANELA_LARGURA  1500
 #define JANELA_ALTURA   1000
 #define JOGADOR_LARGURA 50
 #define JOGADOR_ALTURA  50
 #define JANELA_TITULO   "teste"
-
-#define P1_X 250.0f
-#define P1_Y 900.0f
-#define P1_W 1000.0f
-#define P1_H 50.0f
-
-#define P2_X 340.0f
-#define P2_Y 600.0f
-#define P2_W 800.0f
-#define P2_H 50.0f
 
 int main(void)
 {
@@ -26,27 +17,46 @@ int main(void)
 
     float velocidade_jogador = 5.0f;
 
-    Rectangle jogador = criar_jogador(JANELA_LARGURA / 2, 0, JOGADOR_LARGURA, JOGADOR_ALTURA);
-    Rectangle chao_1_f1 = criar_plataforma(P1_X, P1_Y, P1_W, P1_H);
-    Rectangle chao_2_f1 = criar_plataforma(P2_X, P2_Y, P2_W, P2_H);
+    // Arrays para guardar o que for lido do TXT
+    Rectangle plataformas[MAX_PLATAFORMAS];
+    int qtd_plataformas = 0;
 
-    Rectangle plataformas[] = { chao_1_f1, chao_2_f1 };
-    int qtd_plataformas = 2;
+    Rectangle escadas[MAX_ESCADAS];
+    int qtd_escadas = 0;
+
+    // Vetor para armazenar a posição de spawn que será encontrada no TXT
+    Vector2 spawn_jogador;
+
+    // 1. Carrega os dados do arquivo para os arrays e descobre onde está o 'P'
+    carregar_mapa("mapa.txt", plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador);
+
+    // 2. O jogador agora é criado na posição exata do 'P' lido do mapa
+    Rectangle jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
 
     while (!WindowShouldClose()) 
     {
-        // Atualiza lógica
-        jogador.y += 5.0f; // Gravidade
+        // --- Atualiza lógica ---
+        jogador.y += 5.0f; // Gravidade temporária do seu main original
         jogador = atualizar_movimento(jogador, velocidade_jogador); 
         jogador = verificar_chao(jogador, plataformas, qtd_plataformas);
 
-        // Renderiza
+        // --- Renderiza ---
         BeginDrawing();
             ClearBackground(RAYWHITE);
+            
+            // Desenha todas as escadas carregadas
+            for (int i = 0; i < qtd_escadas; i++) {
+                DrawRectangleRec(escadas[i], BROWN);
+            }
 
-            DrawRectangleRec(chao_1_f1, RED);
-            DrawRectangleRec(chao_2_f1, RED);
+            // Desenha todas as plataformas carregadas
+            for (int i = 0; i < qtd_plataformas; i++) {
+                DrawRectangleRec(plataformas[i], RED);
+            }
+
+            // Desenha o jogador
             DrawRectangleRec(jogador, GREEN);
+            
         EndDrawing();
     }
 
