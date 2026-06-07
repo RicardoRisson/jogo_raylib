@@ -18,11 +18,11 @@ int main(void)
     Texture2D sprite_jogador = LoadTexture("Sprites/Personagem_Parado_Direita.png");
     float velocidade_jogador = 5.0f;
 
-    // Arrays para guardar o que for lido do TXT
-    Rectangle plataformas[MAX_PLATAFORMAS];
+    // Arrays para guardar o que for lido do TXT (Atualizado para o tipo Plataforma)
+    Plataforma plataformas[200];
     int qtd_plataformas = 0;
 
-    Rectangle escadas[MAX_ESCADAS];
+    Escada escadas[MAX_ESCADAS];
     int qtd_escadas = 0;
 
     // Vetor para armazenar a posição de spawn que será encontrada no TXT
@@ -37,9 +37,8 @@ int main(void)
     while (!WindowShouldClose()) 
     {
         // --- Atualiza lógica ---
-        // A função verificar_chao agora gerencia entradas (A/D/Seta), pulo (W/Espaço), 
-        // gravidade interna e resolve colisões nos 4 lados sem teletransporte.
-        jogador = verificar_chao(jogador, plataformas, qtd_plataformas, velocidade_jogador);
+        // ARRUMADO: Agora chama a função correta passando também as escadas para validar o caminho contínuo (DHHHHHS)
+        jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
 
         // --- Renderiza ---
         BeginDrawing();
@@ -47,12 +46,18 @@ int main(void)
             
             // Desenha todas as escadas carregadas
             for (int i = 0; i < qtd_escadas; i++) {
-                DrawRectangleRec(escadas[i], BROWN);
+                DrawRectangleRec(escadas[i].rect, BROWN);
             }
 
             // Desenha todas as plataformas carregadas
             for (int i = 0; i < qtd_plataformas; i++) {
-                DrawRectangleRec(plataformas[i], RED);
+                // Diferenciação visual para você testar no mapa:
+                Color cor_plataforma = RED; 
+                if (plataformas[i].tipo == PLATAFORMA_SOBE) cor_plataforma = GREEN;  // Aperta W para subir
+                if (plataformas[i].tipo == PLATAFORMA_DESCE) cor_plataforma = BLUE;   // Aperta S para descer
+
+                // Passando corretamente o .rect interno da estrutura
+                DrawRectangleRec(plataformas[i].rect, cor_plataforma);
             }
 
             // Desenha o jogador (retângulo verde temporário)

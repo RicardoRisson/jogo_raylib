@@ -1,9 +1,15 @@
 #ifndef OBJETOS_H
 #define OBJETOS_H
 
-#include "raylib.h"
+#include "raylib.h" // Ou a biblioteca de gráficos que você estiver usando para o Rectangle
 
-// Define as dimensões e posição de um obstáculo/chão
+typedef struct {
+    Rectangle rect;
+    int tipo; // 0 = Normal, 1 = Subir, 2 = Descer
+} Escada;
+
+// Declaração das funções
 Rectangle criar_plataforma(float x, float y, float largura, float altura);
-Rectangle criar_escada(float x, float y, float largura, float altura);
+Escada criar_escada(float x, float y, float largura, float altura, int tipo);
+
 #endif
