@@ -15,7 +15,16 @@ Escada criar_escada(float x, float y, float largura, float altura, int tipo) {
     escada.rect.y = y;
     escada.rect.width = largura;
     escada.rect.height = altura;
-    escada.tipo = tipo; // Salvando o número inteiro aqui
+    escada.tipo = tipo; 
 
     return escada;
+}
+
+Rectangle criar_portal(float x, float y, float largura, float altura) {
+    Rectangle portal;
+    portal.x = x;
+    portal.y = y;
+    portal.width = largura;
+    portal.height = altura;
+    return portal;
 }

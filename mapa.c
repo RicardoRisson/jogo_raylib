@@ -1,11 +1,10 @@
 #include "mapa.h"
 #include "objetos.h"
-#include "movimentacao.h" // Garante o acesso à struct Plataforma e aos #define de tipos
+#include "movimentacao.h" 
 #include <stdio.h>
 #include <string.h>
 
-// ARRUMADO: "Rectangle plataformas[]" virou "Plataforma plataformas[]"
-void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *qtd_plataformas, Escada escadas[], int *qtd_escadas, Vector2 *posicao_player) {
+void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *qtd_plataformas, Escada escadas[], int *qtd_escadas, Vector2 *posicao_player, Rectangle *portal) {
     FILE *f = fopen(caminho_arquivo, "r");
     if (!f) {
         TraceLog(LOG_ERROR, "Nao foi possivel abrir o arquivo de mapa: %s", caminho_arquivo);
@@ -17,6 +16,9 @@ void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *q
     
     *qtd_plataformas = 0;
     *qtd_escadas = 0;
+
+    // Reseta o portal para garantir que ele não herde lixo de memória da fase anterior
+    *portal = (Rectangle){ 0, 0, 0, 0 };
 
     posicao_player->x = 100.0f;
     posicao_player->y = 100.0f;
@@ -73,9 +75,16 @@ void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *q
                 posicao_player->y = y;
                 TraceLog(LOG_INFO, "Spawn do jogador encontrado em: X: %.1f, Y: %.1f", x, y);
             }
+            // ARRUMADO: Agora usa a função organizada vinda de objetos.c
+            else if (linha_texto[coluna] == 'F' || linha_texto[coluna] == 'f') {
+                // Atribui o retângulo retornado pela fábrica usando o ponteiro desreferenciado (*)
+                *portal = criar_portal(x, y, TILE_SIZE, TILE_SIZE);
+                TraceLog(LOG_INFO, "Sensor de proxima fase criado via objetos.c em: X: %.1f, Y: %.1f", x, y);
+            }
         }
         linha++;
     }
 
     fclose(f);
+    TraceLog(LOG_INFO, "Mapa carregado com sucesso. Plataformas: %d, Escadas: %d", *qtd_plataformas, *qtd_escadas);
 }

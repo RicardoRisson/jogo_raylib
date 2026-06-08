@@ -12,6 +12,6 @@
 #define MAX_ESCADAS 50
 
 // Função atualizada de Rectangle[] para Plataforma[]
-void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *qtd_plataformas, Escada escadas[], int *qtd_escadas, Vector2 *posicao_player);
-
+void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *qtd_plataformas, 
+                   Escada escadas[], int *qtd_escadas, Vector2 *posicao_player, Rectangle *portal);
 #endif // MAPA_H

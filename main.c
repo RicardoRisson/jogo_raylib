@@ -2,6 +2,7 @@
 #include "personagens.h"
 #include "movimentacao.h" 
 #include "mapa.h" 
+#include <stdio.h> // Necessário para a função sprintf
 
 #define JANELA_LARGURA  1500
 #define JANELA_ALTURA   1000
@@ -28,19 +29,46 @@ int main(void)
     // Vetor para armazenar a posição de spawn que será encontrada no TXT
     Vector2 spawn_jogador;
 
-    // 1. Carrega os dados do arquivo para os arrays e descobre onde está o 'P'
-    carregar_mapa("mapa.txt", plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador);
-
-    // 2. O jogador é criado na posição exata do 'P' lido do mapa
-    Rectangle jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
+    // --- SISTEMA DE FASES POR ARITMÉTICA ASCII ---
+    char fase_atual = 'A';                 // Começa na fase 'A' (ASCII 65)
+    char nome_arquivo[20];                 // Armazena o nome do mapa dinâmico ("mapa_A.txt", etc.)
+    Rectangle portal_proxima_fase = { 0 }; // Quadrado do sensor vindo do objetos.c
+    bool precisa_carregar_fase = true;     // Flag para controlar quando carregar/trocar o mapa
+    
+    Rectangle jogador;
 
     while (!WindowShouldClose()) 
     {
-        // --- Atualiza lógica ---
-        // ARRUMADO: Agora chama a função correta passando também as escadas para validar o caminho contínuo (DHHHHHS)
+        // Se a flag estiver ativa, reconstrói o cenário e reinicia o jogador
+        if (precisa_carregar_fase) {
+            // Monta o nome dinamicamente usando o caractere ASCII atual
+            sprintf(nome_arquivo, "mapa_%c.txt", fase_atual);
+            
+            // 1. Carrega os dados do arquivo passando o novo parâmetro do portal
+            carregar_mapa(nome_arquivo, plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador, &portal_proxima_fase);
+            
+            // 2. O jogador é criado na posição exata do 'P' lido do mapa atual
+            jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
+            
+            precisa_carregar_fase = false; // Desativa a flag após carregar tudo
+        }
+
+        // --- Atualiza lógica de movimentação e física ---
         jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
 
-        // --- Renderiza ---
+        // --- VERIFICAÇÃO DE MUDANÇA DE FASE ---
+        if (CheckCollisionRecs(jogador, portal_proxima_fase)) {
+            fase_atual++; // Avança na tabela ASCII: 'A' -> 'B' -> 'C' -> 'D'
+            
+            // ARRUMADO: Agora a trava aceita a fase 'D'. Se passar dela, o jogo volta para a 'A'.
+            if (fase_atual > 'D') { 
+                fase_atual = 'A'; 
+            }
+            
+            precisa_carregar_fase = true; // Ativa a flag para carregar o novo arquivo no próximo frame
+        }
+
+        // --- Renderiza os elementos na tela ---
         BeginDrawing();
             ClearBackground(RAYWHITE);
             
@@ -51,7 +79,7 @@ int main(void)
 
             // Desenha todas as plataformas carregadas
             for (int i = 0; i < qtd_plataformas; i++) {
-                // Diferenciação visual para você testar no mapa:
+                // Diferenciação visual baseada no tipo da plataforma
                 Color cor_plataforma = RED; 
                 if (plataformas[i].tipo == PLATAFORMA_SOBE) cor_plataforma = GREEN;  // Aperta W para subir
                 if (plataformas[i].tipo == PLATAFORMA_DESCE) cor_plataforma = BLUE;   // Aperta S para descer
@@ -60,13 +88,18 @@ int main(void)
                 DrawRectangleRec(plataformas[i].rect, cor_plataforma);
             }
 
+            // Desenha o sensor/portal de próxima fase (Sem textura, apenas um quadrado roxo)
+            if (!precisa_carregar_fase) {
+                DrawRectangleRec(portal_proxima_fase, PURPLE);
+            }
+
             // Desenha o jogador (retângulo verde temporário)
             DrawRectangleRec(jogador, GREEN);
             
         EndDrawing();
     }
 
-    // Descarrega a textura da memória antes de fechar o jogo
+    // Descarrega a textura da memória antes de encerrar o processo
     UnloadTexture(sprite_jogador);
 
     CloseWindow();
