@@ -50,7 +50,6 @@ Rectangle atualizar_movimento(Rectangle jogador, float velocidade) {
     return jogador;
 }
 
-// --- FUNÇÃO AUXILIAR DE VALIDAÇÃO ---
 // Verifica se existe um caminho contínuo de escadas entre duas alturas Y na mesma posição X do jogador
 static bool existe_caminho_de_escadas(float jogador_x, float y_inicio, float y_fim, Escada escadas[], int quantidade_escadas) {
     float passo = 50.0f; // Tamanho do seu TILE_SIZE

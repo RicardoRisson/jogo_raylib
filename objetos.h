@@ -1,7 +1,7 @@
 #ifndef OBJETOS_H
 #define OBJETOS_H
 
-#include "raylib.h" // Ou a biblioteca de gráficos que você estiver usando para o Rectangle
+#include "raylib.h" 
 
 typedef struct {
     Rectangle rect;

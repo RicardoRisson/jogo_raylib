@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "objetos.h"      // Agora o mapa conhece a struct Escada
-#include "movimentacao.h" // ADICIONADO: Agora o mapa conhece a struct Plataforma e suas constantes
+#include "movimentacao.h" 
 
 #define TILE_SIZE 50
 #define MAX_LINHAS 10000

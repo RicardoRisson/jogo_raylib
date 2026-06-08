@@ -2,7 +2,7 @@
 #include "personagens.h"
 #include "movimentacao.h" 
 #include "mapa.h" 
-#include <stdio.h> // Necessário para a função sprintf
+#include <stdio.h> 
 
 #define JANELA_LARGURA  1500
 #define JANELA_ALTURA   1000
@@ -29,7 +29,7 @@ int main(void)
     // Vetor para armazenar a posição de spawn que será encontrada no TXT
     Vector2 spawn_jogador;
 
-    // --- SISTEMA DE FASES POR ARITMÉTICA ASCII ---
+    // --- SISTEMA DE FASES POR CHAR ---
     char fase_atual = 'A';                 // Começa na fase 'A' (ASCII 65)
     char nome_arquivo[20];                 // Armazena o nome do mapa dinâmico ("mapa_A.txt", etc.)
     Rectangle portal_proxima_fase = { 0 }; // Quadrado do sensor vindo do objetos.c
@@ -60,7 +60,6 @@ int main(void)
         if (CheckCollisionRecs(jogador, portal_proxima_fase)) {
             fase_atual++; // Avança na tabela ASCII: 'A' -> 'B' -> 'C' -> 'D'
             
-            // ARRUMADO: Agora a trava aceita a fase 'D'. Se passar dela, o jogo volta para a 'A'.
             if (fase_atual > 'D') { 
                 fase_atual = 'A'; 
             }
@@ -84,7 +83,6 @@ int main(void)
                 if (plataformas[i].tipo == PLATAFORMA_SOBE) cor_plataforma = GREEN;  // Aperta W para subir
                 if (plataformas[i].tipo == PLATAFORMA_DESCE) cor_plataforma = BLUE;   // Aperta S para descer
 
-                // Passando corretamente o .rect interno da estrutura
                 DrawRectangleRec(plataformas[i].rect, cor_plataforma);
             }
 
