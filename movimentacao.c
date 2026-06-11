@@ -50,6 +50,60 @@ Rectangle atualizar_movimento(Rectangle jogador, float velocidade) {
     return jogador;
 }
 
+Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], int quantidade_plataformas) {
+    float x_anterior = inimigo.hitbox.x;
+    
+    // Move o inimigo horizontalmente reutilizando a sua função de colisão X
+    inimigo.hitbox = mover_e_colidir_x(inimigo.hitbox, inimigo.velocidade, plataformas, quantidade_plataformas);
+    
+    // Se a posição X não mudou, colidiu com uma parede. Inverte a direção!
+    if (inimigo.hitbox.x == x_anterior) {
+        inimigo.velocidade *= -1.0f;
+    }
+
+    // Aplica a gravidade isolada para manter o inimigo no chão
+    inimigo.hitbox.y += GRAVIDADE * 10.0f;
+    
+    bool colidiu_com_chao = false;
+    for (int i = 0; i < quantidade_plataformas; i++) {
+        if (CheckCollisionRecs(inimigo.hitbox, plataformas[i].rect)) {
+            inimigo.hitbox.y = plataformas[i].rect.y - inimigo.hitbox.height;
+            colidiu_com_chao = true;
+            break;
+        }
+    }
+
+    // Se o inimigo está firmemente em uma plataforma, verifica se há chão logo à frente
+    if (colidiu_com_chao) {
+        // Cria um retângulo de teste posicionado à frente do movimento e um pouco abaixo dos pés
+        Rectangle sensor_chao;
+        sensor_chao.width = 10.0f;
+        sensor_chao.height = 5.0f;
+        sensor_chao.y = inimigo.hitbox.y + inimigo.hitbox.height + 2.0f;
+
+        if (inimigo.velocidade > 0.0f) {
+            sensor_chao.x = inimigo.hitbox.x + inimigo.hitbox.width; // Testa a borda direita
+        } else {
+            sensor_chao.x = inimigo.hitbox.x - sensor_chao.width;    // Testa a borda esquerda
+        }
+
+        bool existe_chao_a_frente = false;
+        for (int i = 0; i < quantidade_plataformas; i++) {
+            if (CheckCollisionRecs(sensor_chao, plataformas[i].rect)) {
+                existe_chao_a_frente = true;
+                break;
+            }
+        }
+
+        // Se o sensor não detectou nenhuma plataforma à frente, muda de direção antes de dar o próximo passo
+        if (!existe_chao_a_frente) {
+            inimigo.velocidade *= -1.0f;
+        }
+    }
+
+    return inimigo;
+}
+
 // Verifica se existe um caminho contínuo de escadas entre duas alturas Y na mesma posição X do jogador
 static bool existe_caminho_de_escadas(float jogador_x, float y_inicio, float y_fim, Escada escadas[], int quantidade_escadas) {
     float passo = 50.0f; // Tamanho do seu TILE_SIZE
@@ -80,7 +134,6 @@ static bool existe_caminho_de_escadas(float jogador_x, float y_inicio, float y_f
     }
     return true; // Caminho 100% conectado por escadas H
 }
-
 
 Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[], int quantidade_plataformas, Escada escadas[], int quantidade_escadas, float velocidade) {
     float velocidade_x = 0.0f;
