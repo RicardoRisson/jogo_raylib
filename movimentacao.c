@@ -1,5 +1,6 @@
 #include "movimentacao.h"
 #include <raylib.h>
+#include <float.h>
 
 static const float GRAVIDADE     = 0.5f;
 static const float FORCA_PULO    = -11.0f;
@@ -8,7 +9,7 @@ static const float LIMITE_QUEDA  = 15.0f;
 static float velocidade_y = 0.0f;
 static bool esta_no_chao  = false;
 
-// --- Funções Auxiliares Estáticas ---
+// funçoes auxiliares e estaticas
 
 static Rectangle mover_e_colidir_x(Rectangle jogador, float velocidade_x, Plataforma plataformas[], int quantidade_plataformas) {
     if (velocidade_x == 0.0f) return jogador;
@@ -130,7 +131,7 @@ Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[]
 
         if ((IsKeyPressed(KEY_W) || IsKeyPressed(KEY_SPACE)) && plataformas[i].tipo == PLATAFORMA_SOBE && (colidindo || em_cima)) {
             int indice_plataforma_cima = -1;
-            float menor_distancia_y = 999999.0f;
+            float menor_distancia_y = FLT_MAX;
 
             for (int j = 0; j < quantidade_plataformas; j++) {
                 if (i == j) continue;

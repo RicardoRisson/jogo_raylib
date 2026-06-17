@@ -1,12 +1,11 @@
 #include "personagens.h"
 
-// Variáveis estáticas para armazenar as texturas (escopo local deste arquivo)
 static Texture2D sprite_parado_dir;
 static Texture2D sprite_parado_esq;
 static Texture2D sprite_inimigo_dir;
 static Texture2D sprite_inimigo_esq;
 
-// Carrega as texturas da VRAM
+// Carrega as texturas 
 void CarregarTexturasPersonagens(void) {
     sprite_parado_dir = LoadTexture("Sprites/Personagem_Parado_Direita.png");
     sprite_parado_esq = LoadTexture("Sprites/Personagem_Parado_Esquerda.png");
@@ -14,7 +13,7 @@ void CarregarTexturasPersonagens(void) {
     sprite_inimigo_esq = LoadTexture("Sprites/Inimigo_esquerda.png");
 }
 
-// Descarrega as texturas da VRAM
+// Descarrega as texturas 
 void DescarregarTexturasPersonagens(void) {
     UnloadTexture(sprite_parado_dir);
     UnloadTexture(sprite_parado_esq);
@@ -51,7 +50,7 @@ Inimigo criar_inimigo_rapido(float spawn_x, float spawn_y, int largura_inimigo, 
     return inimigo;
 }
 
-// Renderiza o Jogador aplicando o ajuste de Sprite vs Hitbox
+// Renderiza o Jogador 
 void DesenharJogador(Rectangle jogador, bool olhando_para_direita) {
     Texture2D textura_atual = olhando_para_direita ? sprite_parado_dir : sprite_parado_esq;
     

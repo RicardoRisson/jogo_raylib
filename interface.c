@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 // --- FUNÇÕES DE MANIPULAÇÃO DO PLACAR ---
 
@@ -24,9 +25,8 @@ int carregar_placar(TIPO_PLACAR placar[]) {
         fclose(f);
     }
     
-    // Preenche os slots vazios na memória com um tempo inatingível (999999) 
     for (i = lidos; i < 10; i++) {
-        placar[i].time = 999999;
+        placar[i].time = INT_MAX;
         placar[i].nome[0] = '\0';
     }
     
@@ -39,7 +39,7 @@ void salvar_placar(TIPO_PLACAR placar[]) {
         int contar_validos = 0;
         int i = 0;
         for (i = 0; i < 10; i++) {
-            if (placar[i].time != 999999) contar_validos++;
+            if (placar[i].time != INT_MAX) contar_validos++;
         }
         fwrite(placar, sizeof(TIPO_PLACAR), contar_validos, f);
         fclose(f);
@@ -60,12 +60,12 @@ void inserir_no_ranking(const char *nome, int tempo_jogador) {
     int i = 0, j = 0;
     carregar_placar(placar);
 
-    // Substitui o pior tempo (índice 9) pelo novo jogador
+    // Substitui o pior tempo pelo novo jogador
     strncpy(placar[9].nome, nome, 19);
     placar[9].nome[19] = '\0';
     placar[9].time = tempo_jogador;
 
-    // Bubble Sort: Ordena em ordem CRESCENTE de tempo (menor tempo = melhor colocação)
+    // Bubble Sort pra ordenar pelo tempos
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 9 - i; j++) {
             if (placar[j].time > placar[j + 1].time) {
@@ -79,7 +79,7 @@ void inserir_no_ranking(const char *nome, int tempo_jogador) {
     salvar_placar(placar);
 }
 
-// --- FUNÇÕES DE INTERFACE E RENDERIZAÇÃO ---
+// interface e renderizacao
 
 void AtualizarBotoesInterface(GameState *estado_atual, int *opcao_menu_pausa) {
     if (*estado_atual == STATE_JOGANDO) {
@@ -100,7 +100,7 @@ void DesenharMenuPrincipal(int opcao_selecionada) {
     const char *opcoes[3] = {"NOVO JOGO", "RANKING", "SAIR"};
     
     ClearBackground(RAYWHITE);
-    DrawText("JOGO NINJA EM RAYLIB", 1500 / 2 - MeasureText("JOGO NINJA EM RAYLIB", 50) / 2, 200, 50, DARKGRAY);
+    DrawText("Ninja contra os Ninjas verdes", 1500 / 2 - MeasureText("Ninja contra os Ninjas verdes", 50) / 2, 200, 50, DARKGRAY);
     
     for (i = 0; i < 3; i++) {
         Color cor = (opcao_selecionada == i) ? RED : BLACK;

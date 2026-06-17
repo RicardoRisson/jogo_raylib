@@ -3,18 +3,19 @@
 #include "movimentacao.h" 
 #include "mapa.h" 
 #include "interface.h"
+#include "objetos.h" 
 #include <stdio.h>
+#include <float.h>
 
 #define JANELA_LARGURA  1500
 #define JANELA_ALTURA   1000
 
-// --- AJUSTE DE HITBOX ---
 #define JOGADOR_LARGURA 30
 #define JOGADOR_ALTURA  40
 #define SPRITE_LARGURA  50
 #define SPRITE_ALTURA   50
 
-#define JANELA_TITULO   "Jogo Raylib - Ninja"
+#define JANELA_TITULO   "ninja contra os ninjas verdes"
 
 int main(void)
 {
@@ -44,14 +45,10 @@ int main(void)
     float cronometro_queda = 0.0f;
     float y_ultimo_frame = 0.0f;
 
-    // Carrega as texturas do personagem
-    Texture2D sprite_parado_dir = LoadTexture("Sprites/Personagem_Parado_Direita.png");
-    Texture2D sprite_parado_esq = LoadTexture("Sprites/Personagem_Parado_Esquerda.png");
+    // Carrega as texturas usando o sistema modular que você criou
+    CarregarTexturasPersonagens();
+    CarregarTexturasObjetos();
     bool olhando_para_direita = true;
-
-    // Carrega as texturas dos inimigos
-    Texture2D sprite_inimigo_dir = LoadTexture("Sprites/Inimigo_direita.png");
-    Texture2D sprite_inimigo_esq = LoadTexture("Sprites/Inimigo_esquerda.png");
 
     float velocidade_jogador = 5.0f;
 
@@ -73,22 +70,13 @@ int main(void)
     camera.offset = (Vector2){ JANELA_LARGURA / 2.0f, JANELA_ALTURA / 2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
-
-    // Carrega as texturas dos elementos do cenário
-    Texture2D textura_plataforma = LoadTexture("Sprites/Plataforma.png");
-    Texture2D textura_escada = LoadTexture("Sprites/Escada.png");
-    Texture2D textura_porta = LoadTexture("Sprites/porta.png");
     
     while (!WindowShouldClose()) 
     {
-        // -------------------------------------------------------------
-        // ESCUTA DOS BOTÕES DE INTERFACE
-        // -------------------------------------------------------------
+        // Botoes interface
         AtualizarBotoesInterface(&estado_atual, &opcao_menu_pausa);
 
-        // -------------------------------------------------------------
-        // 1. ATUALIZAÇÃO DA LÓGICA (UPDATE)
-        // -------------------------------------------------------------
+        // Logica de estado atual
         switch (estado_atual) {
             case STATE_MENU:
                 if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) opcao_menu_principal = (opcao_menu_principal + 1) % 3;
@@ -135,14 +123,14 @@ int main(void)
 
                 jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
 
-                // Lógica: Se a posição Y aumentou, ele está descendo/caindo
+                // Se a posição Y aumentou, ele está descendo/caindo
                 if (jogador.y > y_ultimo_frame) {
                     cronometro_queda += GetFrameTime();
                 } else {
                     cronometro_queda = 0.0f; 
                 }
 
-                // Se cair por mais de 2 segundos, cria um hit-box invisível no pé e força a morte
+                // Se cair por mais de 2 segundos cria um hit-box invisível no pé e força a morte
                 if (cronometro_queda >= 2.0f) {
                     Rectangle inimigo_invisivel = { jogador.x, jogador.y + jogador.height - 5.0f, jogador.width, 10.0f };
                     
@@ -155,7 +143,7 @@ int main(void)
                     }
                 }
 
-                // Loop normal de colisão com os inimigos do mapa
+                // Loop de colisão com os inimigos do mapa
                 for (int i = 0; i < qtd_inimigos; i++) {
                     inimigos[i] = atualizar_movimento_inimigo(inimigos[i], plataformas, qtd_plataformas);
                     
@@ -184,7 +172,7 @@ int main(void)
                         precisa_carregar_fase = true;
                     }
                 }
-                
+                // Camera
                 camera.target = (Vector2){ jogador.x + jogador.width / 2.0f, jogador.y + jogador.height / 2.0f };
                 break;
 
@@ -239,69 +227,28 @@ int main(void)
                 break;
         }
 
-        // -------------------------------------------------------------
-        // 2. DESENHO NA TELA (DRAW)
-        // -------------------------------------------------------------
+        
         BeginDrawing();
         ClearBackground(GRAY);
 
         if (estado_atual == STATE_JOGANDO || estado_atual == STATE_PAUSADO) {
             BeginMode2D(camera);
                 
-                // 1º: Desenha as plataformas primeiro
-                for (int i = 0; i < qtd_plataformas; i++) {
-                    Rectangle origem_plat = { 0.0f, 0.0f, (float)textura_plataforma.width, (float)textura_plataforma.height };
-                    Rectangle destino_plat = plataformas[i].rect;
-                    Vector2 origem_rotacao_plat = { 0.0f, 0.0f };
+                // 1 Desenha as plataformas primeiro
+                DesenharPlataformas(plataformas, qtd_plataformas);
 
-                    DrawTexturePro(textura_plataforma, origem_plat, destino_plat, origem_rotacao_plat, 0.0f, WHITE);
-                }
-
-                // 2º: Desenha as escadas por cima das plataformas
-                for (int i = 0; i < qtd_escadas; i++) {
-                    Rectangle origem_escada = { 0.0f, 0.0f, (float)textura_escada.width, (float)textura_escada.height };
-                    Rectangle destino_escada = escadas[i].rect;
-                    Vector2 origem_rotacao_escada = { 0.0f, 0.0f };
-
-                    DrawTexturePro(textura_escada, origem_escada, destino_escada, origem_rotacao_escada, 0.0f, WHITE);
-                }
+                // 2 Desenha as escadas por cima das plataformas
+                DesenharEscadas(escadas, qtd_escadas);
                 
-                // 3º: Desenha os inimigos
-                for (int i = 0; i < qtd_inimigos; i++) {
-                    Texture2D textura_inimigo_atual = (inimigos[i].velocidade > 0.0f) ? sprite_inimigo_dir : sprite_inimigo_esq;
+                // 3 Desenha os inimigos
+                DesenharInimigos(inimigos, qtd_inimigos);
 
-                    Rectangle origem_inimigo = { 0.0f, 0.0f, (float)textura_inimigo_atual.width, (float)textura_inimigo_atual.height };
-                    Rectangle destino_inimigo = inimigos[i].hitbox;
-                    Vector2 origem_rotacao_inimigo = { 0.0f, 0.0f };
-
-                    DrawTexturePro(textura_inimigo_atual, origem_inimigo, destino_inimigo, origem_rotacao_inimigo, 0.0f, WHITE);
-                }
-
-                // 4º: Desenha a Porta
-                if (!precisa_carregar_fase) {
-                    Rectangle origem_porta = { 0.0f, 0.0f, (float)textura_porta.width, (float)textura_porta.height };
-                    Rectangle destino_porta = portal_proxima_fase;
-                    Vector2 origem_rotacao_porta = { 0.0f, 0.0f };
-
-                    DrawTexturePro(textura_porta, origem_porta, destino_porta, origem_rotacao_porta, 0.0f, WHITE);
-                }
+                // 4 Desenha a Porta
+                DesenharPortal(portal_proxima_fase, precisa_carregar_fase);
                 
-                // 5º: Desenha o personagem principal
+                // 5 Desenha o personagem principal
                 if (!precisa_carregar_fase) {
-                    Texture2D textura_atual = olhando_para_direita ? sprite_parado_dir : sprite_parado_esq;
-
-                    Rectangle origem_jog = { 0.0f, 0.0f, (float)textura_atual.width, (float)textura_atual.height };
-                    
-                    Rectangle destino_jog = {
-                        jogador.x - (SPRITE_LARGURA - JOGADOR_LARGURA) / 2.0f,
-                        jogador.y - (SPRITE_ALTURA - JOGADOR_ALTURA), 
-                        SPRITE_LARGURA,
-                        SPRITE_ALTURA
-                    };
-                    
-                    Vector2 origem_rotacao_jog = { 0.0f, 0.0f };
-
-                    DrawTexturePro(textura_atual, origem_jog, destino_jog, origem_rotacao_jog, 0.0f, WHITE);
+                    DesenharJogador(jogador, olhando_para_direita);
                 }
 
             EndMode2D();
@@ -327,14 +274,9 @@ int main(void)
         EndDrawing();
     }
 
-    // Descarrega todas as texturas da VRAM ao fechar o jogo
-    UnloadTexture(sprite_parado_dir);
-    UnloadTexture(sprite_parado_esq);
-    UnloadTexture(sprite_inimigo_dir);
-    UnloadTexture(sprite_inimigo_esq);
-    UnloadTexture(textura_plataforma);
-    UnloadTexture(textura_escada);
-    UnloadTexture(textura_porta);
+    // Descarrega todas as texturas usando o sistema modular que você criou
+    DescarregarTexturasPersonagens();
+    DescarregarTexturasObjetos();
     
     CloseWindow();
     return 0;

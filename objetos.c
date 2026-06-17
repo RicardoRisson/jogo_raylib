@@ -1,18 +1,18 @@
 #include "objetos.h"
 
-// Variáveis estáticas para armazenar as texturas do cenário
+// Variaveis estaticas para armazenar as texturas do cenário
 static Texture2D textura_plataforma;
 static Texture2D textura_escada;
 static Texture2D textura_porta;
 
-// Carrega as texturas da VRAM
+// Carrega as texturas
 void CarregarTexturasObjetos(void) {
     textura_plataforma = LoadTexture("Sprites/Plataforma.png");
     textura_escada = LoadTexture("Sprites/Escada.png");
     textura_porta = LoadTexture("Sprites/porta.png");
 }
 
-// Descarrega as texturas da VRAM
+// Descarrega as texturas
 void DescarregarTexturasObjetos(void) {
     UnloadTexture(textura_plataforma);
     UnloadTexture(textura_escada);
@@ -47,7 +47,7 @@ Rectangle criar_portal(float x, float y, float largura, float altura) {
     return portal;
 }
 
-// Renderiza todas as plataformas
+// Renderiza as plataformas
 void DesenharPlataformas(Plataforma* plataformas, int qtd_plataformas) {
     for (int i = 0; i < qtd_plataformas; i++) {
         Rectangle origem_plat = { 0.0f, 0.0f, (float)textura_plataforma.width, (float)textura_plataforma.height };
@@ -58,7 +58,7 @@ void DesenharPlataformas(Plataforma* plataformas, int qtd_plataformas) {
     }
 }
 
-// Renderiza todas as escadas
+// Renderiza as escadas
 void DesenharEscadas(Escada* escadas, int qtd_escadas) {
     for (int i = 0; i < qtd_escadas; i++) {
         Rectangle origem_escada = { 0.0f, 0.0f, (float)textura_escada.width, (float)textura_escada.height };
@@ -69,7 +69,7 @@ void DesenharEscadas(Escada* escadas, int qtd_escadas) {
     }
 }
 
-// Renderiza o portal/porta de fim de fase
+// Renderiza a porta
 void DesenharPortal(Rectangle portal, bool precisa_carregar_fase) {
     if (!precisa_carregar_fase) {
         Rectangle origem_porta = { 0.0f, 0.0f, (float)textura_porta.width, (float)textura_porta.height };
