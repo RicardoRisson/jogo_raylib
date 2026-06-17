@@ -2,145 +2,337 @@
 #include "personagens.h"
 #include "movimentacao.h" 
 #include "mapa.h" 
-#include <stdio.h> 
+#include "interface.h"
+#include <stdio.h>
 
 #define JANELA_LARGURA  1500
 #define JANELA_ALTURA   1000
-#define JOGADOR_LARGURA 50
-#define JOGADOR_ALTURA  50
-#define JANELA_TITULO   "teste"
+
+// --- AJUSTE DE HITBOX ---
+#define JOGADOR_LARGURA 30
+#define JOGADOR_ALTURA  40
+#define SPRITE_LARGURA  50
+#define SPRITE_ALTURA   50
+
+#define JANELA_TITULO   "Jogo Raylib - Ninja"
 
 int main(void)
 {
     InitWindow(JANELA_LARGURA, JANELA_ALTURA, JANELA_TITULO);
     SetTargetFPS(60);
 
-    // Carrega a textura do jogador (pode ser usada futuramente no DrawTexture)
-    Texture2D sprite_jogador = LoadTexture("Sprites/Personagem_Parado_Direita.png");
+    // Impede que a tecla ESC feche a janela do jogo automaticamente
+    SetExitKey(KEY_NULL);
+
+    // Garante que o arquivo do placar exista
+    inicializar_placar_vazio();
+
+    GameState estado_atual = STATE_MENU;
+    int opcao_menu_principal = 0;
+    int opcao_menu_pausa = 0;
+    
+    // Variáveis de input de nome do jogador
+    char nome_input[20] = "\0";
+    int letras_input = 0;
+    int tecla = 0; 
+
+    // Tempo total de jogo
+    float tempo_jogado = 0.0f;
+    int tempo_final = 0;
+
+    // Variáveis para rastrear o tempo de queda livre do jogador
+    float cronometro_queda = 0.0f;
+    float y_ultimo_frame = 0.0f;
+
+    // Carrega as texturas do personagem
+    Texture2D sprite_parado_dir = LoadTexture("Sprites/Personagem_Parado_Direita.png");
+    Texture2D sprite_parado_esq = LoadTexture("Sprites/Personagem_Parado_Esquerda.png");
+    bool olhando_para_direita = true;
+
+    // Carrega as texturas dos inimigos
+    Texture2D sprite_inimigo_dir = LoadTexture("Sprites/Inimigo_direita.png");
+    Texture2D sprite_inimigo_esq = LoadTexture("Sprites/Inimigo_esquerda.png");
+
     float velocidade_jogador = 5.0f;
 
-    // Arrays para guardar o que for lido do TXT (Atualizado para o tipo Plataforma)
     Plataforma plataformas[200];
     int qtd_plataformas = 0;
-
     Escada escadas[MAX_ESCADAS];
     int qtd_escadas = 0;
-
-    // Arrays para guardar os inimigos carregados do mapa
     Inimigo inimigos[MAX_INIMIGOS];
     int qtd_inimigos = 0;
 
-    // Vetor para armazenar a posição de spawn que será encontrada no TXT
     Vector2 spawn_jogador;
-
-    // --- SISTEMA DE FASES POR CHAR ---
-    char fase_atual = 'A';                 // Começa na fase 'A' (ASCII 65)
-    char nome_arquivo[20];                 // Armazena o nome do mapa dinâmico ("mapa_A.txt", etc.)
-    Rectangle portal_proxima_fase = { 0 }; // Quadrado do sensor vindo do objetos.c
-    bool precisa_carregar_fase = true;     // Flag para controlar quando carregar/trocar o mapa
-    
+    char fase_atual = 'A';
+    char nome_arquivo[20];
+    Rectangle portal_proxima_fase = { 0 };
+    bool precisa_carregar_fase = true;
     Rectangle jogador;
 
-    // --- CONFIGURAÇÃO INICIAL DA CÂMERA 2D ---
     Camera2D camera = { 0 };
-    camera.offset = (Vector2){ JANELA_LARGURA / 2.0f, JANELA_ALTURA / 2.0f }; // Foca no centro da janela
+    camera.offset = (Vector2){ JANELA_LARGURA / 2.0f, JANELA_ALTURA / 2.0f };
     camera.rotation = 0.0f;
-    camera.zoom = 1.0f; // Zoom normal (100%)
+    camera.zoom = 1.0f;
 
+    // Carrega as texturas dos elementos do cenário
+    Texture2D textura_plataforma = LoadTexture("Sprites/Plataforma.png");
+    Texture2D textura_escada = LoadTexture("Sprites/Escada.png");
+    Texture2D textura_porta = LoadTexture("Sprites/porta.png");
+    
     while (!WindowShouldClose()) 
     {
-        // Se a flag estiver ativa, reconstrói o cenário e reinicia o jogador
-        if (precisa_carregar_fase) {
-            // Monta o nome dinamicamente usando o caractere ASCII atual
-            sprintf(nome_arquivo, "mapa_%c.txt", fase_atual);
-            
-            // 1. Carrega os dados do arquivo passando o novo parâmetro do portal e dos inimigos
-            carregar_mapa(nome_arquivo, plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador, &portal_proxima_fase, inimigos, &qtd_inimigos);
-            
-            // 2. O jogador é criado na posição exata do 'P' lido do mapa atual
-            jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
-            
-            precisa_carregar_fase = false; // Desativa a flag após carregar tudo
-        }
+        // -------------------------------------------------------------
+        // ESCUTA DOS BOTÕES DE INTERFACE
+        // -------------------------------------------------------------
+        AtualizarBotoesInterface(&estado_atual, &opcao_menu_pausa);
 
-        // --- Atualiza lógica de movimentação e física do jogador ---
-        jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
+        // -------------------------------------------------------------
+        // 1. ATUALIZAÇÃO DA LÓGICA (UPDATE)
+        // -------------------------------------------------------------
+        switch (estado_atual) {
+            case STATE_MENU:
+                if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) opcao_menu_principal = (opcao_menu_principal + 1) % 3;
+                if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) opcao_menu_principal = (opcao_menu_principal + 2) % 3;
 
-        // --- Atualiza lógica de movimentação de todos os inimigos ---
-        for (int i = 0; i < qtd_inimigos; i++) {
-            inimigos[i] = atualizar_movimento_inimigo(inimigos[i], plataformas, qtd_plataformas);
-            
-            // --- VERIFICAÇÃO DE TOQUE NO INIMIGO (DANO / GAME OVER) ---
-            if (CheckCollisionRecs(jogador, inimigos[i].hitbox)) {
-                fase_atual = 'A';             // Volta para o mapa 1 (fase 'A')
-                precisa_carregar_fase = true; // Ativa a flag para recarregar o mapa e spawnar o jogador
-                break;                        // Sai do loop de verificação já que a fase vai mudar
-            }
-        }
+                if (IsKeyPressed(KEY_ENTER)) {
+                    if (opcao_menu_principal == 0) { 
+                        fase_atual = 'A';
+                        precisa_carregar_fase = true;
+                        tempo_jogado = 0.0f; 
+                        estado_atual = STATE_JOGANDO;
+                    } 
+                    else if (opcao_menu_principal == 1) { 
+                        estado_atual = STATE_RANKING;
+                    } 
+                    else if (opcao_menu_principal == 2) { 
+                        CloseWindow();
+                        return 0;
+                    }
+                }
+                break;
 
-        // --- VERIFICAÇÃO DE MUDANÇA DE FASE (PORTAL) ---
-        if (!precisa_carregar_fase && CheckCollisionRecs(jogador, portal_proxima_fase)) {
-            fase_atual++; // Avança na tabela ASCII: 'A' -> 'B' -> 'C' -> 'D'
-            
-            if (fase_atual > 'D') { 
-                fase_atual = 'A'; 
-            }
-            
-            precisa_carregar_fase = true; // Ativa a flag para carregar o novo arquivo no próximo frame
-        }
+            case STATE_JOGANDO:
+                tempo_jogado += GetFrameTime();
 
-        // --- ATUALIZA A POSIÇÃO DA CÂMERA ---
-        // Faz o alvo (target) da câmera seguir o centro do retângulo do jogador continuamente
-        camera.target = (Vector2){ jogador.x + jogador.width / 2.0f, jogador.y + jogador.height / 2.0f };
-
-        // --- Renderiza os elementos na tela ---
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-            
-            // --- INICIA MODO CÂMERA 2D ---
-            // Tudo desenhado aqui dentro vai se mover de acordo com a posição do jogador
-            BeginMode2D(camera);
-
-                // Desenha todas as escadas carregadas
-                for (int i = 0; i < qtd_escadas; i++) {
-                    DrawRectangleRec(escadas[i].rect, BROWN);
+                if (precisa_carregar_fase) {
+                    sprintf(nome_arquivo, "mapa_%c.txt", fase_atual);
+                    carregar_mapa(nome_arquivo, plataformas, &qtd_plataformas, escadas, &qtd_escadas, &spawn_jogador, &portal_proxima_fase, inimigos, &qtd_inimigos);
+                    jogador = criar_jogador(spawn_jogador.x, spawn_jogador.y, JOGADOR_LARGURA, JOGADOR_ALTURA);
+                    precisa_carregar_fase = false;
+                    cronometro_queda = 0.0f;
+                    y_ultimo_frame = jogador.y;
                 }
 
-                // Desenha todas as plataformas carregadas
-                for (int i = 0; i < qtd_plataformas; i++) {
-                    // Diferenciação visual baseada no tipo da plataforma
-                    Color cor_plataforma = RED; 
-                    if (plataformas[i].tipo == PLATAFORMA_SOBE) cor_plataforma = GREEN;  // Aperta W para subir
-                    if (plataformas[i].tipo == PLATAFORMA_DESCE) cor_plataforma = BLUE;   // Aperta S para descer
-
-                    DrawRectangleRec(plataformas[i].rect, cor_plataforma);
+                if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
+                    olhando_para_direita = true;
+                }
+                else if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
+                    olhando_para_direita = false;
                 }
 
-                // Desenha todos os inimigos carregados (representados por retângulos laranjas temporários)
+                // Guarda a posição Y antiga antes de aplicar a movimentação/gravidade
+                y_ultimo_frame = jogador.y;
+
+                jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
+
+                // Lógica grosseira: Se a posição Y aumentou, ele está descendo/caindo
+                if (jogador.y > y_ultimo_frame) {
+                    cronometro_queda += GetFrameTime();
+                } else {
+                    cronometro_queda = 0.0f; // Reset se parou de cair ou subiu
+                }
+
+                // Se cair por mais de 2 segundos, cria um hit-box invisível no pé e força a morte
+                if (cronometro_queda >= 2.0f) {
+                    Rectangle inimigo_invisivel = { jogador.x, jogador.y + jogador.height - 5.0f, jogador.width, 10.0f };
+                    
+                    if (CheckCollisionRecs(jogador, inimigo_invisivel)) {
+                        fase_atual = 'A'; 
+                        precisa_carregar_fase = true;
+                        tempo_jogado = 0.0f; 
+                        cronometro_queda = 0.0f;
+                        break;
+                    }
+                }
+
+                // Loop normal de colisão com os inimigos do mapa
                 for (int i = 0; i < qtd_inimigos; i++) {
-                    DrawRectangleRec(inimigos[i].hitbox, ORANGE);
+                    inimigos[i] = atualizar_movimento_inimigo(inimigos[i], plataformas, qtd_plataformas);
+                    
+                    if (CheckCollisionRecs(jogador, inimigos[i].hitbox)) {
+                        fase_atual = 'A'; 
+                        precisa_carregar_fase = true;
+                        tempo_jogado = 0.0f; 
+                        break;
+                    }
                 }
 
-                // Desenha o sensor/portal de próxima fase (Sem textura, apenas um quadrado roxo)
+                if (!precisa_carregar_fase && CheckCollisionRecs(jogador, portal_proxima_fase)) {
+                    fase_atual++; 
+                    
+                    if (fase_atual > 'C') { 
+                        tempo_final = (int)tempo_jogado;
+                        
+                        if (verificar_se_entra_no_ranking(tempo_final)) {
+                            estado_atual = STATE_SALVAR_RECORDE;
+                            nome_input[0] = '\0';
+                            letras_input = 0;
+                        } else {
+                            estado_atual = STATE_MENU; 
+                        }
+                    } else {
+                        precisa_carregar_fase = true;
+                    }
+                }
+                
+                camera.target = (Vector2){ jogador.x + jogador.width / 2.0f, jogador.y + jogador.height / 2.0f };
+                break;
+
+            case STATE_PAUSADO:
+                if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) opcao_menu_pausa = (opcao_menu_pausa + 1) % 3;
+                if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) opcao_menu_pausa = (opcao_menu_pausa + 2) % 3;
+
+                if (IsKeyPressed(KEY_ENTER)) {
+                    if (opcao_menu_pausa == 0) { 
+                        estado_atual = STATE_JOGANDO;
+                    } 
+                    else if (opcao_menu_pausa == 1) { 
+                        estado_atual = STATE_MENU;
+                    } 
+                    else if (opcao_menu_pausa == 2) { 
+                        CloseWindow();
+                        return 0;
+                    }
+                }
+                break;
+
+            case STATE_RANKING:
+                if (IsKeyPressed(KEY_ESCAPE)) {
+                    estado_atual = STATE_MENU;
+                }
+                break;
+
+            case STATE_SALVAR_RECORDE:
+                tecla = GetCharPressed();
+                while (tecla > 0) {
+                    if ((tecla >= 32) && (tecla <= 125) && (letras_input < 19)) {
+                        nome_input[letras_input] = (char)tecla;
+                        nome_input[letras_input + 1] = '\0';
+                        letras_input++;
+                    }
+                    tecla = GetCharPressed();
+                }
+
+                if (IsKeyPressed(KEY_BACKSPACE)) {
+                    letras_input--;
+                    if (letras_input < 0) letras_input = 0;
+                    nome_input[letras_input] = '\0';
+                }
+
+                if (IsKeyPressed(KEY_ENTER) && letras_input > 0) {
+                    inserir_no_ranking(nome_input, tempo_final);
+                    estado_atual = STATE_MENU; 
+                }
+                break;
+        }
+
+        // -------------------------------------------------------------
+        // 2. DESENHO NA TELA (DRAW)
+        // -------------------------------------------------------------
+        BeginDrawing();
+        ClearBackground(GRAY);
+
+        if (estado_atual == STATE_JOGANDO || estado_atual == STATE_PAUSADO) {
+            BeginMode2D(camera);
+                
+                // 1º: Desenha as plataformas primeiro (vão para o fundo)
+                for (int i = 0; i < qtd_plataformas; i++) {
+                    Rectangle origem_plat = { 0.0f, 0.0f, (float)textura_plataforma.width, (float)textura_plataforma.height };
+                    Rectangle destino_plat = plataformas[i].rect;
+                    Vector2 origem_rotacao_plat = { 0.0f, 0.0f };
+
+                    DrawTexturePro(textura_plataforma, origem_plat, destino_plat, origem_rotacao_plat, 0.0f, WHITE);
+                }
+
+                // 2º: Desenha as escadas por cima das plataformas
+                for (int i = 0; i < qtd_escadas; i++) {
+                    Rectangle origem_escada = { 0.0f, 0.0f, (float)textura_escada.width, (float)textura_escada.height };
+                    Rectangle destino_escada = escadas[i].rect;
+                    Vector2 origem_rotacao_escada = { 0.0f, 0.0f };
+
+                    DrawTexturePro(textura_escada, origem_escada, destino_escada, origem_rotacao_escada, 0.0f, WHITE);
+                }
+                
+                // 3º: Desenha os inimigos
+                for (int i = 0; i < qtd_inimigos; i++) {
+                    Texture2D textura_inimigo_atual = (inimigos[i].velocidade > 0.0f) ? sprite_inimigo_dir : sprite_inimigo_esq;
+
+                    Rectangle origem_inimigo = { 0.0f, 0.0f, (float)textura_inimigo_atual.width, (float)textura_inimigo_atual.height };
+                    Rectangle destino_inimigo = inimigos[i].hitbox;
+                    Vector2 origem_rotacao_inimigo = { 0.0f, 0.0f };
+
+                    DrawTexturePro(textura_inimigo_atual, origem_inimigo, destino_inimigo, origem_rotacao_inimigo, 0.0f, WHITE);
+                }
+
+                // 4º: Desenha a Porta (renderiza atrás do jogador, mas na frente do cenário)
                 if (!precisa_carregar_fase) {
-                    DrawRectangleRec(portal_proxima_fase, PURPLE);
-                }
+                    Rectangle origem_porta = { 0.0f, 0.0f, (float)textura_porta.width, (float)textura_porta.height };
+                    Rectangle destino_porta = portal_proxima_fase;
+                    Vector2 origem_rotacao_porta = { 0.0f, 0.0f };
 
-                // Desenha o jogador (retângulo verde temporário)
-                DrawRectangleRec(jogador, GREEN);
+                    DrawTexturePro(textura_porta, origem_porta, destino_porta, origem_rotacao_porta, 0.0f, WHITE);
+                }
+                
+                // 5º: Desenha o personagem principal (por cima de tudo)
+                if (!precisa_carregar_fase) {
+                    Texture2D textura_atual = olhando_para_direita ? sprite_parado_dir : sprite_parado_esq;
+
+                    Rectangle origem_jog = { 0.0f, 0.0f, (float)textura_atual.width, (float)textura_atual.height };
+                    
+                    Rectangle destino_jog = {
+                        jogador.x - (SPRITE_LARGURA - JOGADOR_LARGURA) / 2.0f,
+                        jogador.y - (SPRITE_ALTURA - JOGADOR_ALTURA), 
+                        SPRITE_LARGURA,
+                        SPRITE_ALTURA
+                    };
+                    
+                    Vector2 origem_rotacao_jog = { 0.0f, 0.0f };
+
+                    DrawTexturePro(textura_atual, origem_jog, destino_jog, origem_rotacao_jog, 0.0f, WHITE);
+                }
 
             EndMode2D();
-            // --- TERMINA MODO CÂMERA 2D ---
-            
-            // Dica: Se quiser desenhar elementos fixos na tela (como uma barra de vida ou texto de pontuação),
-            // desenhe-os aqui, depois do EndMode2D() para que eles não se movam com o cenário.
+
+            char texto_tempo[30];
+            sprintf(texto_tempo, "TEMPO: %d", (int)tempo_jogado);
+            DrawText(texto_tempo, 20, 20, 30, BLACK);
+
+            if (estado_atual == STATE_PAUSADO) {
+                DesenharMenuPausa(opcao_menu_pausa);
+            }
+        } 
+        else if (estado_atual == STATE_MENU) {
+            DesenharMenuPrincipal(opcao_menu_principal);
+        }
+        else if (estado_atual == STATE_RANKING) {
+            DesenharRanking();
+        }
+        else if (estado_atual == STATE_SALVAR_RECORDE) {
+            DesenharTelaSalvarRecorde(nome_input, tempo_final);
+        }
 
         EndDrawing();
     }
 
-    // Descarrega a textura da memória antes de encerrar o processo
-    UnloadTexture(sprite_jogador);
-
+    // Descarrega todas as texturas da VRAM ao fechar o jogo
+    UnloadTexture(sprite_parado_dir);
+    UnloadTexture(sprite_parado_esq);
+    UnloadTexture(sprite_inimigo_dir);
+    UnloadTexture(sprite_inimigo_esq);
+    UnloadTexture(textura_plataforma);
+    UnloadTexture(textura_escada);
+    UnloadTexture(textura_porta);
+    
     CloseWindow();
     return 0;
 }

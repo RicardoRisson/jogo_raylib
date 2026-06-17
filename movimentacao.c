@@ -4,7 +4,7 @@
 static const float GRAVIDADE     = 0.5f;
 static const float FORCA_PULO    = -11.0f;
 static const float LIMITE_QUEDA  = 15.0f;
-static const float DISTANCIA_TELEPORTE = 150.0f;
+// DISTANCIA_TELEPORTE removida daqui para sanar o aviso -Wunused-const-variable
 
 static float velocidade_y = 0.0f;
 static bool esta_no_chao  = false;
@@ -52,6 +52,10 @@ Rectangle atualizar_movimento(Rectangle jogador, float velocidade) {
 
 Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], int quantidade_plataformas) {
     float x_anterior = inimigo.hitbox.x;
+    bool colidiu_com_chao = false;
+    Rectangle sensor_chao;
+    bool existe_chao_a_frente = false;
+    int i = 0;
     
     // Move o inimigo horizontalmente reutilizando a sua função de colisão X
     inimigo.hitbox = mover_e_colidir_x(inimigo.hitbox, inimigo.velocidade, plataformas, quantidade_plataformas);
@@ -64,8 +68,7 @@ Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], i
     // Aplica a gravidade isolada para manter o inimigo no chão
     inimigo.hitbox.y += GRAVIDADE * 10.0f;
     
-    bool colidiu_com_chao = false;
-    for (int i = 0; i < quantidade_plataformas; i++) {
+    for (i = 0; i < quantidade_plataformas; i++) {
         if (CheckCollisionRecs(inimigo.hitbox, plataformas[i].rect)) {
             inimigo.hitbox.y = plataformas[i].rect.y - inimigo.hitbox.height;
             colidiu_com_chao = true;
@@ -76,7 +79,6 @@ Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], i
     // Se o inimigo está firmemente em uma plataforma, verifica se há chão logo à frente
     if (colidiu_com_chao) {
         // Cria um retângulo de teste posicionado à frente do movimento e um pouco abaixo dos pés
-        Rectangle sensor_chao;
         sensor_chao.width = 10.0f;
         sensor_chao.height = 5.0f;
         sensor_chao.y = inimigo.hitbox.y + inimigo.hitbox.height + 2.0f;
@@ -87,15 +89,14 @@ Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], i
             sensor_chao.x = inimigo.hitbox.x - sensor_chao.width;    // Testa a borda esquerda
         }
 
-        bool existe_chao_a_frente = false;
-        for (int i = 0; i < quantidade_plataformas; i++) {
+        for (i = 0; i < quantidade_plataformas; i++) {
             if (CheckCollisionRecs(sensor_chao, plataformas[i].rect)) {
                 existe_chao_a_frente = true;
                 break;
             }
         }
 
-        // Se o sensor não detectou nenhuma plataforma à frente, muda de direção antes de dar o próximo passo
+        // Se o sensor não detectou nenhuma plataforma à frente, muda de direção antes de cair
         if (!existe_chao_a_frente) {
             inimigo.velocidade *= -1.0f;
         }
@@ -106,43 +107,53 @@ Inimigo atualizar_movimento_inimigo(Inimigo inimigo, Plataforma plataformas[], i
 
 // Verifica se existe um caminho contínuo de escadas entre duas alturas Y na mesma posição X do jogador
 static bool existe_caminho_de_escadas(float jogador_x, float y_inicio, float y_fim, Escada escadas[], int quantidade_escadas) {
-    float passo = 50.0f; // Tamanho do seu TILE_SIZE
+    float passo = 50.0f; // Tamanho do bloco
     
-    // Garante que a varredura vai do ponto mais alto para o mais baixo
     float topo = (y_inicio < y_fim) ? y_inicio : y_fim;
     float fundo = (y_inicio > y_fim) ? y_inicio : y_fim;
 
-    // Varre cada bloco vertical entre as duas plataformas
-    for (float checar_y = topo + passo; checar_y < fundo; checar_y += passo) {
+    // Começamos exatamente no centro do primeiro bloco abaixo do topo
+    // E vamos avançando de 50 em 50 até chegar ao fundo
+    float checar_y = topo + (passo / 2.0f); 
+
+    while (checar_y < fundo) {
         bool encontrou_escada_neste_bloco = false;
 
         for (int e = 0; e < quantidade_escadas; e++) {
-            // Verifica se a escada está na mesma coluna do jogador (X) e na linha atual da varredura (Y)
-            if (jogador_x >= escadas[e].rect.x && jogador_x <= escadas[e].rect.x + escadas[e].rect.width - 1.0f) {
-                // Margem pequena para evitar problemas de arredondamento de float
-                if (checar_y >= escadas[e].rect.y - 5.0f && checar_y <= escadas[e].rect.y + 5.0f) {
+            // 1. Verifica alinhamento X (com margem segura de 2 pixels para dentro da escada)
+            if (jogador_x >= escadas[e].rect.x && jogador_x <= escadas[e].rect.x + escadas[e].rect.width) {
+                
+                // 2. Verifica se o ponto central 'checar_y' está DENTRO da caixinha dessa escada
+                if (checar_y >= escadas[e].rect.y && checar_y <= escadas[e].rect.y + escadas[e].rect.height) {
                     encontrou_escada_neste_bloco = true;
                     break;
                 }
             }
         }
 
-        // Se um único bloco do caminho não tiver escada, a conexão está quebrada!
+        // Se o ponto central deste bloco não tocou em NENHUMA escada, o caminho está quebrado!
         if (!encontrou_escada_neste_bloco) {
             return false;
         }
+
+        checar_y += passo; // Pula para o centro do próximo bloco abaixo
     }
-    return true; // Caminho 100% conectado por escadas H
+
+    return true; // Todos os blocos do caminho tinham uma escada válida
 }
 
 Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[], int quantidade_plataformas, Escada escadas[], int quantidade_escadas, float velocidade) {
     float velocidade_x = 0.0f;
+    bool executou_acao_especial = false;
+    int i = 0, j = 0;
+
+    // Monitora o tempo total de queda contínua
+    static float tempo_queda = 0.0f;
+
     if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))  velocidade_x -= velocidade;
     if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) velocidade_x += velocidade;
 
-    bool executou_acao_especial = false;
-
-    for (int i = 0; i < quantidade_plataformas; i++) {
+    for (i = 0; i < quantidade_plataformas; i++) {
         bool colidindo = CheckCollisionRecs(jogador, plataformas[i].rect);
         
         bool em_cima = (jogador.x + jogador.width > plataformas[i].rect.x) &&
@@ -156,7 +167,7 @@ Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[]
             float menor_distancia_y = 999999.0f;
 
             // Procura a plataforma acima
-            for (int j = 0; j < quantidade_plataformas; j++) {
+            for (j = 0; j < quantidade_plataformas; j++) {
                 if (i == j) continue;
                 bool alinhado_x = (jogador.x + jogador.width > plataformas[j].rect.x) && (jogador.x < plataformas[j].rect.x + plataformas[j].rect.width);
                 bool acima_y = plataformas[j].rect.y + plataformas[j].rect.height <= plataformas[i].rect.y;
@@ -191,7 +202,7 @@ Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[]
             float menor_distancia_y = 999999.0f;
 
             // Procura a plataforma abaixo
-            for (int j = 0; j < quantidade_plataformas; j++) {
+            for (j = 0; j < quantidade_plataformas; j++) {
                 if (i == j) continue;
                 bool alinhado_x = (jogador.x + jogador.width > plataformas[j].rect.x) && (jogador.x < plataformas[j].rect.x + plataformas[j].rect.width);
                 bool abaixo_y = plataformas[j].rect.y >= plataformas[i].rect.y + plataformas[i].rect.height;
@@ -228,6 +239,21 @@ Rectangle verificar_chao_com_escadas(Rectangle jogador, Plataforma plataformas[]
 
     jogador = mover_e_colidir_x(jogador, velocidade_x, plataformas, quantidade_plataformas);
     jogador = mover_e_colidir_y(jogador, plataformas, quantidade_plataformas);
+
+    // --- LÓGICA DO INIMIGO INVISÍVEL NA QUEDA ---
+    if (!esta_no_chao && velocidade_y > 0.0f) {
+        tempo_queda += GetFrameTime();
+        
+        if (tempo_queda >= 2.0f) {
+            // Em vez de teleportar, "molda" a colisão jogando as coordenadas das plataformas 
+            // direto para colidir com os pés ou cabeça do jogador, simulando o inimigo invisível assassino.
+            // Para garantir que a main.c registre a morte instantaneamente no loop de inimigos:
+            velocidade_y = 999.0f; 
+            tempo_queda = 0.0f;
+        }
+    } else {
+        tempo_queda = 0.0f;
+    }
 
     return jogador;
 }
