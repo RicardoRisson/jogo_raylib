@@ -135,11 +135,11 @@ int main(void)
 
                 jogador = verificar_chao_com_escadas(jogador, plataformas, qtd_plataformas, escadas, qtd_escadas, velocidade_jogador);
 
-                // Lógica grosseira: Se a posição Y aumentou, ele está descendo/caindo
+                // Lógica: Se a posição Y aumentou, ele está descendo/caindo
                 if (jogador.y > y_ultimo_frame) {
                     cronometro_queda += GetFrameTime();
                 } else {
-                    cronometro_queda = 0.0f; // Reset se parou de cair ou subiu
+                    cronometro_queda = 0.0f; 
                 }
 
                 // Se cair por mais de 2 segundos, cria um hit-box invisível no pé e força a morte
@@ -234,6 +234,9 @@ int main(void)
                     estado_atual = STATE_MENU; 
                 }
                 break;
+
+            default:
+                break;
         }
 
         // -------------------------------------------------------------
@@ -245,7 +248,7 @@ int main(void)
         if (estado_atual == STATE_JOGANDO || estado_atual == STATE_PAUSADO) {
             BeginMode2D(camera);
                 
-                // 1º: Desenha as plataformas primeiro (vão para o fundo)
+                // 1º: Desenha as plataformas primeiro
                 for (int i = 0; i < qtd_plataformas; i++) {
                     Rectangle origem_plat = { 0.0f, 0.0f, (float)textura_plataforma.width, (float)textura_plataforma.height };
                     Rectangle destino_plat = plataformas[i].rect;
@@ -274,7 +277,7 @@ int main(void)
                     DrawTexturePro(textura_inimigo_atual, origem_inimigo, destino_inimigo, origem_rotacao_inimigo, 0.0f, WHITE);
                 }
 
-                // 4º: Desenha a Porta (renderiza atrás do jogador, mas na frente do cenário)
+                // 4º: Desenha a Porta
                 if (!precisa_carregar_fase) {
                     Rectangle origem_porta = { 0.0f, 0.0f, (float)textura_porta.width, (float)textura_porta.height };
                     Rectangle destino_porta = portal_proxima_fase;
@@ -283,7 +286,7 @@ int main(void)
                     DrawTexturePro(textura_porta, origem_porta, destino_porta, origem_rotacao_porta, 0.0f, WHITE);
                 }
                 
-                // 5º: Desenha o personagem principal (por cima de tudo)
+                // 5º: Desenha o personagem principal
                 if (!precisa_carregar_fase) {
                     Texture2D textura_atual = olhando_para_direita ? sprite_parado_dir : sprite_parado_esq;
 

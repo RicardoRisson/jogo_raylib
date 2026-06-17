@@ -2,19 +2,17 @@
 #define MAPA_H
 
 #include "raylib.h"
-#include "objetos.h"      // Agora o mapa conhece a struct Escada
-#include "movimentacao.h" 
-#include "personagens.h"  // Adicionado para o mapa conhecer a struct Inimigo
+#include "objetos.h"      
+#include "personagens.h" 
 
 #define TILE_SIZE 50
-#define MAX_LINHAS 10000
-#define MAX_COLUNAS 10000
-#define MAX_PLATAFORMAS 200
-#define MAX_ESCADAS 50
-#define MAX_INIMIGOS 30   // Limite máximo de inimigos por mapa
+#define MAX_LINHAS 1000
+#define MAX_COLUNAS 1000
+#define MAX_PLATAFORMAS 500
+#define MAX_INIMIGOS 30
 
-// Função atualizada de Rectangle[] para Plataforma[], agora recebendo os inimigos
 void carregar_mapa(const char *caminho_arquivo, Plataforma plataformas[], int *qtd_plataformas, 
                    Escada escadas[], int *qtd_escadas, Vector2 *posicao_player, Rectangle *portal,
                    Inimigo inimigos[], int *qtd_inimigos);
-#endif // MAPA_H
+
+#endif
